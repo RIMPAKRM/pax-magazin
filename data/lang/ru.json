@@ -2,6 +2,7 @@
 	"material_shop_button": "🏪 Магазин материалов",
 	"material_shop_window_title": "Магазин материалов",
 	"material_shop_dollars": "Казна: %s",
+	"material_shop_select_colony": "Колония:",
 	"material_shop_select_resource": "Ресурс:",
 	"material_shop_amount": "Количество:",
 	"material_shop_resource_amount": "%s: %d",

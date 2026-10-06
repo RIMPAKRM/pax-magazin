@@ -72,10 +72,13 @@ const GAME_SCALE := 1_000_000.0
 var _dollars_label: Label
 var _resource_label: Label
 var _price_label: Label
+var _colony_selector: OptionButton
 var _resource_selector: OptionButton
 var _amount_input: LineEdit
 var _game_ref: PaxGame
+var _selected_colony: String = ""
 var _selected_resource: String = "materials"
+var _known_colonies: Array = []
 var _known_list: Array = []
 
 
@@ -94,16 +97,18 @@ func _days_passed(_game: PaxGame, _from_day: int, _days: int) -> void:
 
 
 func _save_state(_game: PaxGame) -> Dictionary:
-	return {"selected_resource": _selected_resource}
+	return {"selected_resource": _selected_resource, "selected_colony": _selected_colony}
 
 
 func _game_loaded(_game: PaxGame, state: Dictionary) -> void:
 	_game_ref = _game
+	_selected_colony = str(state.get("selected_colony", ""))
 	_selected_resource = str(state.get("selected_resource", "materials"))
 	# Старые сейвы могли хранить русский ключ — переводим в новый или откатываемся.
 	_selected_resource = str(_OLD_KEYS.get(_selected_resource, _selected_resource))
 	if not _tradeable_list().has(_selected_resource):
 		_selected_resource = "materials"
+	_fill_colonies()
 	_fill_selector()
 	_refresh_ui()
 
@@ -114,15 +119,19 @@ func _tradeable_list() -> Array:
 	var list_: Array = RESOURCE_PRICES.keys()
 	if _game_ref == null:
 		return list_
-	var home: String = _game_ref.home_body()
-	var stock: Dictionary = _game_ref.resources(home)
-	for k in stock.keys():
-		var kk := str(k)
-		# Ресурсы — числа; служебные секции склада (production, upkeep, load) — словари.
-		if stock[k] is Dictionary or stock[k] is Array:
-			continue
-		if not NOT_RESOURCES.has(kk) and not list_.has(kk):
-			list_.append(kk)
+	# Числовые ключи складов домашнего тела и выбранной колонии — кандидаты.
+	var bodies: Array = [_game_ref.home_body()]
+	if not _selected_colony.is_empty() and not bodies.has(_selected_colony):
+		bodies.append(_selected_colony)
+	for body in bodies:
+		var stock: Dictionary = _game_ref.resources(str(body))
+		for k in stock.keys():
+			var kk := str(k)
+			# Ресурсы — числа; служебные секции склада (production, upkeep, load) — словари.
+			if stock[k] is Dictionary or stock[k] is Array:
+				continue
+			if not NOT_RESOURCES.has(kk) and not list_.has(kk):
+				list_.append(kk)
 	# Объявленные игрой виды с нулевым запасом (ресурс ведётся, но его ещё нет).
 	if _game_ref.stock != null and _game_ref.stock.has_method("all_kinds"):
 		for k in _game_ref.stock.all_kinds():
@@ -130,6 +139,50 @@ func _tradeable_list() -> Array:
 			if not NOT_RESOURCES.has(kk) and not list_.has(kk):
 				list_.append(kk)
 	return list_
+
+
+# Колонии для торговли: домашнее тело первым, дальше остальные.
+func _tradeable_colonies() -> Array:
+	var list_: Array = []
+	if _game_ref == null:
+		return list_
+	for c in _game_ref.colonies():
+		list_.append(str(c))
+	var home: String = _game_ref.home_body()
+	if list_.has(home):
+		list_.erase(home)
+		list_.push_front(home)
+	return list_
+
+
+# Как показать колонию в списке: имя колонии от игры + тело («Марс»).
+func _colony_display(body: String) -> String:
+	if _game_ref != null and _game_ref.stock != null and _game_ref.stock.has_method("colony_name"):
+		return "%s (%s)" % [str(_game_ref.stock.colony_name(body)), body]
+	return body
+
+
+func _fill_colonies() -> void:
+	if not is_instance_valid(_colony_selector) or _game_ref == null:
+		return
+	var list_: Array = _tradeable_colonies()
+	if list_ == _known_colonies and _colony_selector.item_count == list_.size():
+		return
+	_known_colonies = list_.duplicate()
+	_colony_selector.clear()
+	var selected_index: int = _known_colonies.find(_selected_colony)
+	if selected_index < 0:
+		selected_index = 0
+		_selected_colony = str(_known_colonies[0]) if not _known_colonies.is_empty() else ""
+	for body in _known_colonies:
+		_colony_selector.add_item(_colony_display(str(body)))
+	_colony_selector.select(selected_index)
+
+
+func _on_colony_selected(index: int) -> void:
+	if index >= 0 and index < _known_colonies.size():
+		_selected_colony = str(_known_colonies[index])
+		_refresh_ui()
 
 
 # Название ресурса — из словаря самой игры, на языке игрока.
@@ -172,6 +225,18 @@ func _build_ui(game: PaxGame) -> void:
 
 	_resource_label = Label.new()
 	box.add_child(_resource_label)
+
+	# Выбор колонии
+	var colony_container := HBoxContainer.new()
+	var colony_label := Label.new()
+	colony_label.text = tr_key("material_shop_select_colony")
+	colony_container.add_child(colony_label)
+
+	_colony_selector = OptionButton.new()
+	_colony_selector.item_selected.connect(_on_colony_selected)
+	colony_container.add_child(_colony_selector)
+	box.add_child(colony_container)
+	_fill_colonies()
 
 	# Выбор ресурса
 	var resource_container := HBoxContainer.new()
@@ -219,20 +284,18 @@ func _refresh_ui() -> void:
 	if not is_instance_valid(_dollars_label) or not is_instance_valid(_resource_label) or _game_ref == null:
 		return
 
+	_fill_colonies()
 	_fill_selector()
 
-	var home: String = _game_ref.home_body()
-	var resources: Dictionary = _game_ref.resources(home)
+	var colony: String = _current_colony()
+	var resources: Dictionary = _game_ref.resources(colony)
 
 	# Казна в игровых единицах (1 = 1,000,000$) → реальные доллары для отображения
 	var game_dollars: float = _game_ref.money() if not resources.is_empty() else 0.0
 	var real_dollars: float = game_dollars * GAME_SCALE
 	_dollars_label.text = tr_key("material_shop_dollars") % _format_dollars(real_dollars)
 
-	var resource_amount: float = 0.0
-	if not resources.is_empty():
-		resource_amount = float(resources.get(_selected_resource, 0.0))
-
+	var resource_amount: float = _have_resource(colony, _selected_resource, resources)
 	_resource_label.text = tr_key("material_shop_resource_amount") % [_resource_name(_selected_resource), int(resource_amount)]
 
 	_update_price()
@@ -270,6 +333,37 @@ func _parse_amount() -> int:
 	return amount
 
 
+# Выбранная колония или домашнее тело, если выбор ещё не сделан/потерян.
+func _current_colony() -> String:
+	if not _selected_colony.is_empty() and _game_ref != null \
+			and _game_ref.colonies().has(_selected_colony):
+		return _selected_colony
+	return _game_ref.home_body() if _game_ref != null else ""
+
+
+# «Люди» — не складской ресурс: на домашнем теле настоящее население живёт в
+# game.sim.res["humans"], а stock["humans"] — зеркало, которое игра переписывает
+# из sim каждую неделю (src/sim/ColonyState.gd, extraction()). На остальных
+# телах stock["humans"] — само население. Читаем через body_people (game.people),
+# пишем, как colony_state().set_people().
+func _have_resource(body: String, resource: String, stock: Dictionary) -> float:
+	if resource == "humans":
+		return _game_ref.people(body)
+	return float(stock.get(resource, 0.0))
+
+
+func _adjust_resource(body: String, resource: String, delta: float) -> void:
+	if resource == "humans":
+		var new_value: float = maxf(0.0, _game_ref.people(body) + delta)
+		if body == _game_ref.home_body() and _game_ref.sim != null:
+			_game_ref.sim.res["humans"] = new_value
+		var z: Dictionary = _game_ref.resources(body)
+		if not z.is_empty():
+			z["humans"] = new_value
+		return
+	_game_ref.add_resource(body, resource, delta)
+
+
 func _on_resource_selected(index: int) -> void:
 	if index >= 0 and index < _known_list.size():
 		_selected_resource = str(_known_list[index])
@@ -284,8 +378,8 @@ func _buy_resource() -> void:
 	if _game_ref == null:
 		return
 
-	var home: String = _game_ref.home_body()
-	if _game_ref.resources(home).is_empty():
+	var colony: String = _current_colony()
+	if colony.is_empty() or _game_ref.resources(colony).is_empty():
 		_game_ref.toast(tr_key("material_shop_no_colony"))
 		return
 
@@ -300,7 +394,7 @@ func _buy_resource() -> void:
 		return
 
 	_game_ref.add_money(-total_price_game_units)
-	_game_ref.add_resource(home, _selected_resource, float(amount))
+	_adjust_resource(colony, _selected_resource, float(amount))
 
 	_game_ref.toast(tr_key("material_shop_bought", [amount, _resource_name(_selected_resource), _format_dollars(total_price_real)]))
 	_refresh_ui()
@@ -310,9 +404,9 @@ func _sell_resource() -> void:
 	if _game_ref == null:
 		return
 
-	var home: String = _game_ref.home_body()
-	var resources: Dictionary = _game_ref.resources(home)
-	if resources.is_empty():
+	var colony: String = _current_colony()
+	var resources: Dictionary = _game_ref.resources(colony)
+	if colony.is_empty() or resources.is_empty():
 		_game_ref.toast(tr_key("material_shop_no_colony"))
 		return
 
@@ -322,13 +416,13 @@ func _sell_resource() -> void:
 	var total_price_real: float = amount * price_per_unit
 	var total_price_game_units: float = total_price_real / GAME_SCALE
 
-	var current_amount: float = float(resources.get(_selected_resource, 0.0))
+	var current_amount: float = _have_resource(colony, _selected_resource, resources)
 	if current_amount < float(amount):
 		_game_ref.toast(tr_key("material_shop_no_materials", [_resource_name(_selected_resource)]))
 		return
 
 	_game_ref.add_money(total_price_game_units)
-	_game_ref.add_resource(home, _selected_resource, -float(amount))
+	_adjust_resource(colony, _selected_resource, -float(amount))
 
 	_game_ref.toast(tr_key("material_shop_sold", [amount, _resource_name(_selected_resource), _format_dollars(total_price_real)]))
 	_refresh_ui()
