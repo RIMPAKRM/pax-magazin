@@ -1,17 +1,22 @@
 {
 	"material_shop_button": "🏪 Material Shop",
 	"material_shop_window_title": "Material Shop",
-	"material_shop_dollars": "Treasury: $%s",
+	"material_shop_dollars": "Treasury: %s",
 	"material_shop_select_resource": "Resource:",
 	"material_shop_amount": "Amount:",
 	"material_shop_resource_amount": "%s: %d",
 	"material_shop_buy": "Buy",
 	"material_shop_sell": "Sell",
-	"material_shop_price": "Price: $%s for %d units",
-	"material_shop_bought": "Bought %d %s for $%s",
-	"material_shop_sold": "Sold %d %s for $%s",
-	"material_shop_no_money": "Not enough money! Need $%s",
+	"material_shop_price": "Price: %s for %d units",
+	"material_shop_bought": "Bought %d %s for %s",
+	"material_shop_sold": "Sold %d %s for %s",
+	"material_shop_no_money": "Not enough money! Need %s",
 	"material_shop_no_materials": "Not enough %s!",
 	"material_shop_no_colony": "No colony on this body!",
-	"material_shop_hello": "Material Shop loaded. Trade treasury for resources at the bottom bar."
+	"material_shop_hello": "Material Shop loaded. Trade treasury for resources at the bottom bar.",
+	"material_shop_money_billion": "%s billion $",
+	"material_shop_money_million": "%s million $",
+	"material_shop_money_thousand": "%s thousand $",
+	"material_shop_money_dollars": "%s $",
+	"material_shop_res_rare": "Uranium"
 }

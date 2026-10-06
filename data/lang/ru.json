@@ -1,17 +1,22 @@
 {
 	"material_shop_button": "🏪 Магазин материалов",
 	"material_shop_window_title": "Магазин материалов",
-	"material_shop_dollars": "Казна: $%s",
+	"material_shop_dollars": "Казна: %s",
 	"material_shop_select_resource": "Ресурс:",
 	"material_shop_amount": "Количество:",
 	"material_shop_resource_amount": "%s: %d",
 	"material_shop_buy": "Купить",
 	"material_shop_sell": "Продать",
-	"material_shop_price": "Цена: $%s за %d ед.",
-	"material_shop_bought": "Куплено %d %s за $%s",
-	"material_shop_sold": "Продано %d %s за $%s",
-	"material_shop_no_money": "Недостаточно денег! Нужно $%s",
+	"material_shop_price": "Цена: %s за %d ед.",
+	"material_shop_bought": "Куплено %d %s за %s",
+	"material_shop_sold": "Продано %d %s за %s",
+	"material_shop_no_money": "Недостаточно денег! Нужно %s",
 	"material_shop_no_materials": "Недостаточно %s!",
 	"material_shop_no_colony": "Нет колонии на этом теле!",
-	"material_shop_hello": "Магазин материалов загружен. Торгуйте казной на ресурсы в нижней панели."
+	"material_shop_hello": "Магазин материалов загружен. Торгуйте казной на ресурсы в нижней панели.",
+	"material_shop_money_billion": "%s млрд $",
+	"material_shop_money_million": "%s млн $",
+	"material_shop_money_thousand": "%s тыс $",
+	"material_shop_money_dollars": "%s $",
+	"material_shop_res_rare": "Уран(редкое)"
 }

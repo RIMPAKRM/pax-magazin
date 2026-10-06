@@ -5,13 +5,13 @@
 		"en": "Material Shop",
 		"ru": "Material Shop"
 	},
-	"version": "0.1.0",
+	"version": "0.3.0",
 	"api": 1,
-	"game_version": ">=0.9.0",
+	"game_version": ">=0.25.0",
 	"authors": ["RIMPAK"],
 	"description": {
-		"en": "Adds a shop where you can trade treasury for various resources (materials, food, fuel, rare materials) with custom amounts.",
-		"ru": "Добавляет магазин, где можно покупать и продавать ресурсы за деньги (материалы, еда, горючее, редкое) с любым количеством."
+		"en": "Adds a shop where you can trade treasury for any resource (people, energy, materials, water, food, fuel, rare, oil, metals, medicine, military hardware — even resources the game creates on the fly) with custom amounts.",
+		"ru": "Добавляет магазин, где можно покупать и продавать любые ресурсы за деньги (люди, энергия, материалы, вода, еда, горючее, редкое, нефть, металлы, лекарства, вооружение — включая ресурсы, которые игра заводит на ходу) с любым количеством."
 	},
 	"tags": [],
 	"depends": [],
